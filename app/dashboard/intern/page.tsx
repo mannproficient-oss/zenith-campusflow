@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/auth";
-import { ref, onValue, update } from "firebase/database";
+import { ref, onValue, update, push, set } from "firebase/database";
 import { db } from "@/lib/firebase";
-import { LogOut, Activity, Navigation, Clock, CheckCircle } from "lucide-react";
+import { LogOut, Activity, Navigation, Clock, CheckCircle, Plus } from "lucide-react";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -28,6 +28,7 @@ const CSS = `
 ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#1f1f1f;border-radius:2px;}
 `;
 
+const COURSES = ["AI & Machine Learning","Data Science","Full Stack Dev","Cloud Computing","Cybersecurity","UI/UX Design"];
 const CHECKPOINTS = [
   {id:"zenith_office",label:"Zenith Office",e:"🏢"},{id:"a_block",label:"A Block",e:"🏗️"},
   {id:"d_block",label:"D Block",e:"🏛️"},{id:"dedicated_floor",label:"Dedicated Floor",e:"🔝"},
@@ -99,7 +100,32 @@ export default function InternDashboard() {
     });
   },[user]);
 
-  const toggleDuty = async () => {
+  const [showSelfAssign, setShowSelfAssign] = useState(false);
+  const [selfForm, setSelfForm] = useState({studentName:"",phone:"",course:COURSES[0]});
+  const [selfSaving, setSelfSaving] = useState(false);
+
+  const selfAssignVisit = async () => {
+    if(!selfForm.studentName||!user) return;
+    setSelfSaving(true);
+    const vRef = push(ref(db,"visits"));
+    await set(vRef,{
+      studentName: selfForm.studentName,
+      phone: selfForm.phone,
+      course: selfForm.course,
+      internUid: user.uid,
+      internName: profile?.name||"",
+      counsellorUid: "",
+      counsellorName: "Self Assigned",
+      status: "started",
+      checkpoints: [],
+      startedAt: Date.now(),
+      createdAt: Date.now(),
+    });
+    showToast("Visit started!");
+    setSelfForm({studentName:"",phone:"",course:COURSES[0]});
+    setShowSelfAssign(false);
+    setSelfSaving(false);
+  };
     if(!user) return;
     await update(ref(db,`users/${user.uid}`),{isOnDuty:!profile?.isOnDuty});
     showToast(profile?.isOnDuty?"You are now off duty":"You are now on duty");
@@ -247,10 +273,31 @@ export default function InternDashboard() {
                     </button>
                   </div>
                 ) : (
-                  <div className="au2 card" style={{padding:"28px 16px",textAlign:"center"}}>
-                    <Navigation size={24} style={{color:"#222",marginBottom:8}}/>
+                  <div className="au2 card" style={{padding:"24px 16px",textAlign:"center"}}>
+                    <Navigation size={24} style={{color:"#3a2a5a",marginBottom:8}}/>
                     <p style={{fontSize:13,fontWeight:500,color:"#9d8cbb",margin:"0 0 4px"}}>No Active Visit</p>
-                    <p style={{fontSize:12,color:"#6b5a88",margin:0}}>Turn on duty to receive assignments.</p>
+                    <p style={{fontSize:12,color:"#6b5a88",margin:"0 0 16px"}}>Counsellor assigns you a visit, or start one yourself.</p>
+                    <button onClick={()=>setShowSelfAssign(!showSelfAssign)}
+                      style={{background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.3)",borderRadius:8,padding:"8px 16px",color:"#c4b5fd",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",display:"inline-flex",alignItems:"center",gap:6}}>
+                      <Plus size={14}/> Start Visit Yourself
+                    </button>
+
+                    {showSelfAssign && (
+                      <div style={{marginTop:14,textAlign:"left"}}>
+                        <input style={{width:"100%",background:"#0a0810",border:"1px solid #1e1530",borderRadius:8,padding:"9px 12px",color:"#f0ecff",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",marginBottom:8,boxSizing:"border-box"}}
+                          placeholder="Student name *" value={selfForm.studentName} onChange={e=>setSelfForm(f=>({...f,studentName:e.target.value}))}/>
+                        <input style={{width:"100%",background:"#0a0810",border:"1px solid #1e1530",borderRadius:8,padding:"9px 12px",color:"#f0ecff",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",marginBottom:8,boxSizing:"border-box"}}
+                          placeholder="Phone (optional)" value={selfForm.phone} onChange={e=>setSelfForm(f=>({...f,phone:e.target.value}))}/>
+                        <select style={{width:"100%",background:"#0a0810",border:"1px solid #1e1530",borderRadius:8,padding:"9px 12px",color:"#f0ecff",fontSize:13,fontFamily:"Inter,sans-serif",outline:"none",marginBottom:12,boxSizing:"border-box",cursor:"pointer"}}
+                          value={selfForm.course} onChange={e=>setSelfForm(f=>({...f,course:e.target.value}))}>
+                          {COURSES.map(c=><option key={c}>{c}</option>)}
+                        </select>
+                        <button onClick={selfAssignVisit} disabled={selfSaving||!selfForm.studentName}
+                          style={{width:"100%",background:selfForm.studentName?"#fff":"#1a1230",color:selfForm.studentName?"#000":"#6b5a88",borderRadius:8,padding:"10px 0",fontSize:13,fontWeight:600,cursor:selfForm.studentName?"pointer":"default",border:"none",fontFamily:"Inter,sans-serif"}}>
+                          {selfSaving?"Starting...":"Start Visit →"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
