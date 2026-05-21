@@ -42,6 +42,7 @@ const NAV = [
   {id:"analytics",icon:BarChart3,  label:"Analytics"},
   {id:"attendance",icon:Clock,     label:"Attendance"},
 ];
+const CP_LABELS:any = {zenith_office:"🏢 Zenith Office",a_block:"🏗️ A Block",d_block:"🏛️ D Block",dedicated_floor:"🔝 Dedicated Floor",reception:"🎪 Reception",library:"📚 Library",canteen:"🍽️ Canteen",hostel:"🏠 Hostel",off_campus:"🌍 Off Campus",cabin:"🪵 Cabin"};
 
 const Av = ({name,size=28}:any) => {
   const i = name?.split(" ").map((w:string)=>w[0]).join("").slice(0,2).toUpperCase()||"?";
@@ -215,6 +216,15 @@ export default function AdminDashboard() {
                       <div style={{flex:1}}>
                         <p style={{fontSize:13,fontWeight:500,color:"#e5e5e5",margin:0}}>{v.studentName}</p>
                         <p style={{fontSize:11,color:"#444",margin:0}}>{v.course} · {v.internName}</p>
+                        {v.currentCheckpoint && v.status!=="completed" && (
+                          <div style={{display:"flex",alignItems:"center",gap:4,marginTop:4}}>
+                            <div style={{width:5,height:5,borderRadius:"50%",background:"#22c55e"}} className="dot"/>
+                            <span style={{fontSize:11,color:"#22c55e"}}>Currently at: {CP_LABELS[v.currentCheckpoint]||v.currentCheckpoint}</span>
+                          </div>
+                        )}
+                        {v.checkpoints?.length>0 && (
+                          <p style={{fontSize:10,color:"#333",margin:"2px 0 0"}}>Route: {v.checkpoints.map((c:string)=>CP_LABELS[c]||c).join(" → ")}</p>
+                        )}
                       </div>
                       <Badge color={v.status==="completed"?"green":v.status==="in_progress"?"amber":"purple"}>{v.status}</Badge>
                     </div>
