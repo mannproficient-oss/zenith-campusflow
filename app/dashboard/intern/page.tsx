@@ -67,6 +67,7 @@ export default function InternDashboard() {
   const [activeCP, setActiveCP]         = useState<string|null>(null);
   const [myVisits, setMyVisits]         = useState<any[]>([]);
   const [toasts, setToasts]             = useState<any[]>([]);
+  const [mob, setMob]                   = useState(false);
 
   const toast = useCallback((type: string, title: string, msg: string) => {
     const id = Date.now();
@@ -145,7 +146,10 @@ export default function InternDashboard() {
           ))}
         </div>
 
-        <aside className="glass" style={{width:220,flexShrink:0,display:"flex",flexDirection:"column",padding:"20px 12px",borderRight:"1px solid rgba(255,255,255,.06)",position:"fixed",top:0,left:0,height:"100vh",zIndex:50,overflowY:"auto"}}>
+        {/* Mobile overlay */}
+        {mob && <div onClick={()=>setMob(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:40}}/>}
+
+        <aside className="glass" style={{width:220,flexShrink:0,display:"flex",flexDirection:"column",padding:"20px 12px",borderRight:"1px solid rgba(255,255,255,.06)",position:"fixed",top:0,left:0,height:"100vh",zIndex:50,overflowY:"auto",transition:"transform .28s cubic-bezier(.16,1,.3,1)",transform:mob?"translateX(0)":"translateX(-220px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",marginBottom:24}}>
             <div className="glow-v" style={{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#4f46e5)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <Zap size={16} style={{color:"white"}}/>
@@ -157,7 +161,7 @@ export default function InternDashboard() {
           </div>
           <nav style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
             {NAV.map(n=>(
-              <button key={n.id} className={`nav-it${tab===n.id?" on":""}`} onClick={()=>setTab(n.id)} style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:10,color:tab===n.id?"#c4b5fd":"#4b5563"}}>
+              <button key={n.id} className={`nav-it${tab===n.id?" on":""}`} onClick={()=>{setTab(n.id);setMob(false);}} style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:10,color:tab===n.id?"#c4b5fd":"#4b5563"}}>
                 <n.icon size={15}/><span className="f-dm" style={{fontSize:13,fontWeight:500}}>{n.label}</span>
               </button>
             ))}
@@ -167,11 +171,16 @@ export default function InternDashboard() {
           </button>
         </aside>
 
-        <div style={{flex:1,marginLeft:220,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
-          <header className="glass" style={{padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.06)",position:"sticky",top:0,zIndex:30,background:"rgba(7,7,15,.88)"}}>
-            <div>
-              <p className="f-syne" style={{fontSize:13,fontWeight:600,color:"#f8f8ff",margin:0}}>Campus Buddy</p>
-              <p className="f-dm" style={{fontSize:11,color:"#374151",margin:0}}>Zenith CampusFlow</p>
+        <div style={{flex:1,marginLeft:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+          <header className="glass" style={{padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.06)",position:"sticky",top:0,zIndex:30,background:"rgba(7,7,15,.88)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <button onClick={()=>setMob(!mob)} style={{background:"none",border:"none",cursor:"pointer",padding:4,color:"#6b7280"}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+              <div>
+                <p className="f-syne" style={{fontSize:13,fontWeight:600,color:"#f8f8ff",margin:0}}>Campus Buddy</p>
+                <p className="f-dm" style={{fontSize:11,color:"#374151",margin:0}}>Zenith CampusFlow</p>
+              </div>
             </div>
             <div className="glass glass-hi" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",borderRadius:12,cursor:"pointer"}}>
               <Av name={profile?.name} sz="sm"/>
