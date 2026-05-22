@@ -139,11 +139,31 @@ export default function InternDashboard() {
     showToast(`📍 ${CHECKPOINTS.find(c=>c.id===cpId)?.label}`);
   };
 
+  const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadPhoto = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST", body: formData
+    });
+    const data = await res.json();
+    setPhotos(prev => [...prev, data.secure_url]);
+    setUploading(false);
+    showToast("📸 Photo uploaded!");
+  };
+
   const completeVisit = async () => {
     if(!activeVisit) return;
-    await update(ref(db,`visits/${activeVisit.id}`),{status:"completed",completedAt:Date.now()});
+    await update(ref(db,`visits/${activeVisit.id}`),{status:"completed",completedAt:Date.now(),photos,notes});
     showToast("Visit completed! 🎉");
     setActiveCP(null);
+    setPhotos([]);
+    setNotes("");
   };
 
   const stepIdx = activeVisit?({assigned:0,started:1,in_progress:2,completed:3} as any)[activeVisit.status]??0:-1;
@@ -268,6 +288,25 @@ export default function InternDashboard() {
                         </button>
                       ))}
                     </div>
+                    {/* Notes */}
+                    <p style={{fontSize:11,fontWeight:500,color:"#9d8cbb",margin:"0 0 6px",letterSpacing:"0.5px",textTransform:"uppercase"}}>Visit Notes</p>
+                    <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Add notes about this visit..."
+                      style={{width:"100%",background:"#0a0810",border:"1px solid #1e1530",borderRadius:8,padding:"9px 12px",color:"#f0ecff",fontSize:12,fontFamily:"Inter,sans-serif",outline:"none",marginBottom:12,boxSizing:"border-box",resize:"none",height:70}}/>
+
+                    {/* Photo Upload */}
+                    <p style={{fontSize:11,fontWeight:500,color:"#9d8cbb",margin:"0 0 6px",letterSpacing:"0.5px",textTransform:"uppercase"}}>Photos</p>
+                    <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",border:"1px dashed #1e1530",borderRadius:8,cursor:"pointer",marginBottom:8,color:"#6b5a88",fontSize:12,fontFamily:"Inter,sans-serif"}}>
+                      {uploading ? "Uploading..." : "📸 Tap to add photo"}
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>e.target.files?.[0]&&uploadPhoto(e.target.files[0])}/>
+                    </label>
+                    {photos.length>0 && (
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                        {photos.map((url,i)=>(
+                          <img key={i} src={url} style={{width:60,height:60,borderRadius:6,objectFit:"cover",border:"1px solid #1e1530"}}/>
+                        ))}
+                      </div>
+                    )}
+
                     <button onClick={completeVisit} style={{width:"100%",background:"#fff",color:"#000",borderRadius:8,padding:"10px 0",fontSize:13,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"Inter,sans-serif"}}>
                       Mark Complete ✓
                     </button>
